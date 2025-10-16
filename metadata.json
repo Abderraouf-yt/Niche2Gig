@@ -1,0 +1,5 @@
+{
+  "name": "Fiverr Niche Finder",
+  "description": "An AI-powered tool to discover under-served and profitable niches on Fiverr. It uses Gemini to analyze market data and provides a configurable scoring system to rank opportunities based on user-defined weights for demand, competition, and price.",
+  "requestFramePermissions": []
+}
