@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [expandedNiche, setExpandedNiche] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<FilterState>({
     price: { min: 0, max: 2000 },
@@ -127,6 +128,23 @@ const App: React.FC = () => {
 
   }, [niches, weights, filters]);
 
+  const handleNicheSelect = useCallback((nicheName: string) => {
+    setExpandedNiche(nicheName);
+    
+    // Smooth scroll to the table entry
+    setTimeout(() => {
+      const element = document.getElementById(`niche-card-${nicheName}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Pulse highlight effect
+        element.classList.add('ring-4', 'ring-cyan-500/50');
+        setTimeout(() => {
+            element.classList.remove('ring-4', 'ring-cyan-500/50');
+        }, 2000);
+      }
+    }, 100);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
       <Header />
@@ -142,7 +160,7 @@ const App: React.FC = () => {
           </div>
           <div className="lg:col-span-8 xl:col-span-9">
             {isLoading && !niches.length ? (
-              <div className="flex justify-center items-center h-96 bg-gray-800/50 rounded-lg p-6 shadow-2xl border border-gray-700">
+              <div className="flex justify-center items-center h-[600px] bg-gray-800/50 rounded-lg p-6 shadow-2xl border border-gray-700">
                 <Loader progress={progress} />
               </div>
             ) : error ? (
@@ -162,19 +180,23 @@ const App: React.FC = () => {
                     <>
                         <RisingNichesBanner data={scoredNiches} />
                         <div className="bg-gray-800/50 rounded-lg p-6 shadow-2xl border border-gray-700">
-                          <h2 className="text-2xl font-bold mb-4 text-cyan-400">Top 10 Niches</h2>
-                          <div className="h-80">
-                            <NicheChart data={scoredNiches.slice(0, 10)} />
+                          <h2 className="text-2xl font-bold mb-6 text-cyan-400">Top 10 Rankings</h2>
+                          <div className="max-h-[640px] h-[640px]">
+                            <NicheChart data={scoredNiches.slice(0, 10)} onNicheClick={handleNicheSelect} />
                           </div>
                         </div>
                         <div className="bg-gray-800/50 rounded-lg p-6 shadow-2xl border border-gray-700">
-                          <div className="flex justify-between items-center mb-4">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                             <h2 className="text-2xl font-bold text-cyan-400">
-                                Filtered Analysis ({scoredNiches.length} results)
+                                Detailed Analysis ({scoredNiches.length})
                             </h2>
                             <ExportButtons data={scoredNiches} />
                           </div>
-                          <ResultsTable data={scoredNiches} />
+                          <ResultsTable 
+                            data={scoredNiches} 
+                            expandedNiche={expandedNiche} 
+                            setExpandedNiche={setExpandedNiche} 
+                          />
                         </div>
                     </>
                 ) : (

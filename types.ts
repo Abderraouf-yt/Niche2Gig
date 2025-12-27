@@ -6,6 +6,12 @@ export interface Niche {
   demand: number;
   competition: number;
   trend: number;
+  // Enriched fields for world-class exports
+  gigTitles: string[];
+  gigDescription: string;
+  keywords: string[];
+  faqs: { question: string; answer: string }[];
+  battlePlan: string;
 }
 
 export interface ScoredNiche extends Niche {

@@ -6,6 +6,8 @@ import { CompetitionModal } from './CompetitionModal';
 
 interface ResultsTableProps {
   data: ScoredNiche[];
+  expandedNiche: string | null;
+  setExpandedNiche: (nicheName: string | null) => void;
 }
 
 const MetricBadge: React.FC<{ label: string; value: number | string; color: string; icon?: string }> = ({ label, value, color, icon }) => (
@@ -56,11 +58,10 @@ const ScoreGauge: React.FC<{ score: number }> = ({ score }) => {
   );
 };
 
-export const ResultsTable: React.FC<ResultsTableProps> = ({ data }) => {
+export const ResultsTable: React.FC<ResultsTableProps> = ({ data, expandedNiche, setExpandedNiche }) => {
   const [sortKey, setSortKey] = useState<keyof ScoredNiche>('score');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedNiche, setSelectedNiche] = useState<{ niche: ScoredNiche | null; modal: 'roi' | 'gig' | 'competition' | null }>({ niche: null, modal: null });
-  const [expandedNiche, setExpandedNiche] = useState<string | null>(null);
 
   const sortedData = useMemo(() => {
     return [...data].sort((a, b) => {
@@ -116,6 +117,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ data }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {sortedData.map((niche) => (
           <div 
+            id={`niche-card-${niche.niche}`}
             key={niche.niche}
             className={`group relative flex flex-col bg-gray-800/40 rounded-2xl border transition-all duration-300 hover:shadow-2xl hover:bg-gray-800/60 ${
               expandedNiche === niche.niche ? 'ring-2 ring-cyan-500/50 border-cyan-500/50 bg-gray-800/80' : 'border-gray-700 hover:border-gray-600'

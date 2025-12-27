@@ -1,13 +1,31 @@
 import type { ScoredNiche } from '../types';
 
 const convertToCSV = (data: ScoredNiche[]): string => {
-  const headers = Object.keys(data[0]);
-  const csvRows = [headers.join(',')];
+  if (data.length === 0) return '';
+  
+  // Define columns in an order that makes sense for a business report
+  const columns = [
+    'niche', 'score', 'averagePrice', 'demand', 'competition', 'trend', 
+    'description', 'gigTitles', 'keywords', 'battlePlan', 'faqs'
+  ];
+  
+  const headers = columns.join(',');
+  const csvRows = [headers];
 
   for (const row of data) {
-    const values = headers.map(header => {
-      const value = row[header as keyof ScoredNiche];
-      const escaped = ('' + (value !== null && value !== undefined ? value : '')).replace(/"/g, '\\"');
+    const values = columns.map(header => {
+      let value = row[header as keyof ScoredNiche];
+      
+      // Handle special formatting for complex fields
+      if (header === 'gigTitles' && Array.isArray(value)) {
+        value = value.join(' | ');
+      } else if (header === 'keywords' && Array.isArray(value)) {
+        value = value.join(', ');
+      } else if (header === 'faqs' && Array.isArray(value)) {
+        value = value.map(f => `Q: ${f.question} A: ${f.answer}`).join(' || ');
+      }
+      
+      const escaped = ('' + (value !== null && value !== undefined ? value : '')).replace(/"/g, '""');
       return `"${escaped}"`;
     });
     csvRows.push(values.join(','));
@@ -19,7 +37,7 @@ const downloadFile = (content: string, fileName: string, mimeType: string) => {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-a.href = url;
+  a.href = url;
   a.download = fileName;
   document.body.appendChild(a);
   a.click();

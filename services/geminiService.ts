@@ -11,29 +11,53 @@ const responseSchema = {
     type: Type.OBJECT,
     properties: {
       niche: { type: Type.STRING, description: 'The specific name of the Fiverr niche.' },
-      description: { type: Type.STRING, description: 'A detailed description of the niche, including services offered, potential keywords, and a brief market outlook.' },
-      averagePrice: { type: Type.NUMBER, description: 'The estimated average price in USD for a standard project in this niche.' },
-      demand: { type: Type.NUMBER, description: 'A score from 1 (low) to 10 (high) representing current buyer demand.' },
-      competition: { type: Type.NUMBER, description: 'A score from 1 (low) to 10 (high) representing the number of sellers. Lower is better for new freelancers.' },
-      trend: { type: Type.NUMBER, description: 'A score from -1.0 (declining) to 1.0 (growing) indicating the market trend over the last 6-12 months.' },
+      description: { type: Type.STRING, description: 'High-level market overview.' },
+      averagePrice: { type: Type.NUMBER, description: 'Estimated project price in USD.' },
+      demand: { type: Type.NUMBER, description: 'Score 1-10 for buyer interest.' },
+      competition: { type: Type.NUMBER, description: 'Score 1-10 for seller saturation.' },
+      trend: { type: Type.NUMBER, description: 'Trend direction -1.0 to 1.0.' },
+      // Enriched fields
+      gigTitles: { 
+        type: Type.ARRAY, 
+        items: { type: Type.STRING },
+        description: '3 optimized Fiverr gig titles.' 
+      },
+      gigDescription: { type: Type.STRING, description: 'A professional, high-converting gig description.' },
+      keywords: { 
+        type: Type.ARRAY, 
+        items: { type: Type.STRING },
+        description: '5 essential search tags.' 
+      },
+      faqs: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            question: { type: Type.STRING },
+            answer: { type: Type.STRING }
+          },
+          required: ['question', 'answer']
+        },
+        description: '2 most important buyer FAQs.'
+      },
+      battlePlan: { type: Type.STRING, description: 'Strategic advice on how to outperform existing top sellers.' }
     },
-    required: ['niche', 'description', 'averagePrice', 'demand', 'competition', 'trend'],
+    required: ['niche', 'description', 'averagePrice', 'demand', 'competition', 'trend', 'gigTitles', 'gigDescription', 'keywords', 'faqs', 'battlePlan'],
   },
 };
 
 export const fetchNicheData = async (): Promise<Niche[]> => {
-  const prompt = `Analyze the current Fiverr marketplace and generate a diverse list of 20 potentially profitable niches for freelancers. For each niche, provide the following details:
-- niche: The specific name of the Fiverr niche.
-- description: A detailed description of the niche, including what services it offers, potential keywords for a gig, and a brief market outlook (e.g., "Growing demand due to AI boom").
-- averagePrice: The estimated average price in USD for a standard project in this niche.
-- demand: A score from 1 (low) to 10 (high) representing current buyer demand.
-- competition: A score from 1 (low) to 10 (high) representing the number of sellers. Lower is better for new freelancers.
-- trend: A score from -1.0 (declining) to 1.0 (growing) indicating the market trend over the last 6-12 months.
-Return the data as a JSON array.`;
+  const prompt = `Act as a senior Fiverr market analyst. Discover 15 high-potential, specialized niches for 2025. 
+For each niche, go beyond basic stats. I need a "Gig Execution Blueprint" including:
+1. Optimized titles and tags.
+2. A compelling description that addresses buyer pain points.
+3. A "Battle Plan" describing the specific competitive advantage a new seller should focus on to win.
+
+Return the data as a detailed JSON array following the strict schema provided.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
