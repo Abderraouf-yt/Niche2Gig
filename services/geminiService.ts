@@ -22,7 +22,7 @@ const responseSchema = {
 };
 
 export const fetchNicheData = async (): Promise<Niche[]> => {
-  const prompt = `Analyze the current Fiverr marketplace and generate a diverse list of 50 potentially profitable niches for freelancers. For each niche, provide the following details:
+  const prompt = `Analyze the current Fiverr marketplace and generate a diverse list of 20 potentially profitable niches for freelancers. For each niche, provide the following details:
 - niche: The specific name of the Fiverr niche.
 - description: A detailed description of the niche, including what services it offers, potential keywords for a gig, and a brief market outlook (e.g., "Growing demand due to AI boom").
 - averagePrice: The estimated average price in USD for a standard project in this niche.
@@ -33,7 +33,7 @@ Return the data as a JSON array.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",

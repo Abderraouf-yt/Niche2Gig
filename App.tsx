@@ -31,6 +31,7 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("Failed to parse weights from localStorage", error);
     }
+    // Default: Balanced Goal weights
     return {
       demand: 5,
       competition: -5,
@@ -184,7 +185,7 @@ const App: React.FC = () => {
               </div>
             ) : (
                  <div className="flex justify-center items-center h-96 bg-gray-800/50 rounded-lg p-6 shadow-2xl border border-gray-700">
-                    <p className="text-gray-400 text-center">Click "Analyze Niches" to get started.</p>
+                    <p className="text-gray-400 text-center">Click "Refresh Niche Analysis" to get started.</p>
                 </div>
             )}
           </div>

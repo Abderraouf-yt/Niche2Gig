@@ -12,6 +12,8 @@ export interface ScoredNiche extends Niche {
   score: number;
 }
 
+export type NicheGoal = 'balanced' | 'quick-start' | 'high-ticket' | 'trend-hunter' | 'custom';
+
 export interface ScoringWeights {
   demand: number;
   competition: number;
