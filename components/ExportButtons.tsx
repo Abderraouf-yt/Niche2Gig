@@ -38,18 +38,18 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data }) => {
     };
 
     const handleExportCSV = () => {
-        const success = exportToCSV(data, 'fiverr_market_report.csv');
+        const success = exportToCSV(data, 'fiverr_niche_analysis_blueprint.csv');
         if (success) {
-            showToast('Full Market Report exported to CSV!', 'success');
+            showToast('Full Deep Analysis exported to CSV!', 'success');
         } else {
             showToast('No data to export.', 'error');
         }
     };
 
     const handleExportJSON = () => {
-        const success = exportToJSON(data, 'fiverr_market_report.json');
+        const success = exportToJSON(data, 'fiverr_niche_analysis_blueprint.json');
         if (success) {
-            showToast('Full Market Report exported to JSON!', 'success');
+            showToast('Full Strategy Blueprint exported to JSON!', 'success');
         } else {
             showToast('No data to export.', 'error');
         }
@@ -57,21 +57,32 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({ data }) => {
 
     return (
         <>
-            <div className="flex space-x-2">
-                <button
-                    onClick={handleExportCSV}
-                    className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-center text-gray-200 bg-gray-700/50 border border-gray-600 rounded-lg hover:bg-gray-600 hover:border-cyan-400 focus:ring-4 focus:outline-none focus:ring-gray-800 transition-all"
-                >
-                    Export Full Report (CSV)
-                </button>
-                <button
-                    onClick={handleExportJSON}
-                    className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-center text-gray-200 bg-gray-700/50 border border-gray-600 rounded-lg hover:bg-gray-600 hover:border-cyan-400 focus:ring-4 focus:outline-none focus:ring-gray-800 transition-all"
-                >
-                    Export JSON
-                </button>
+            <div className="flex flex-col sm:flex-row items-end gap-3">
+                <div className="flex flex-col items-end">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter mb-1 mr-1">Includes Market Battle Plan</span>
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={handleExportCSV}
+                            className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-center text-gray-100 bg-cyan-600/20 border border-cyan-500/30 rounded-lg hover:bg-cyan-600 hover:border-cyan-400 focus:ring-4 focus:outline-none focus:ring-cyan-900 transition-all shadow-lg hover:shadow-cyan-500/20"
+                        >
+                            Export Strategy (CSV)
+                        </button>
+                        <button
+                            onClick={handleExportJSON}
+                            className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-center text-gray-200 bg-gray-700/50 border border-gray-600 rounded-lg hover:bg-gray-600 hover:border-cyan-400 focus:ring-4 focus:outline-none focus:ring-gray-800 transition-all"
+                        >
+                            Export JSON
+                        </button>
+                    </div>
+                </div>
             </div>
-            {toast.visible && <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(prev => ({...prev, visible: false}))} />}
+            {toast.visible && (
+                <Toast 
+                    message={toast.message} 
+                    type={toast.type} 
+                    onDismiss={() => setToast(prev => ({...prev, visible: false}))} 
+                />
+            )}
         </>
     );
 };

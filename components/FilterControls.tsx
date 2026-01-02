@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { FilterState } from '../types';
 
@@ -54,11 +55,16 @@ const RangeInput: React.FC<{
     onChange: (key: 'min' | 'max', value: number) => void;
     step?: number;
     prefix?: string;
-}> = ({ label, min, max, valueMin, valueMax, onChange, step = 1, prefix = '' }) => (
-  <div className="space-y-2">
+    isClamped?: boolean;
+}> = ({ label, min, max, valueMin, valueMax, onChange, step = 1, prefix = '', isClamped }) => (
+  <div className={`space-y-2 transition-colors duration-300 ${isClamped ? 'bg-red-500/10 p-2 -m-2 rounded-lg' : ''}`}>
     <div className="flex justify-between items-center">
-        <label className="block text-xs font-medium text-gray-400">{label}</label>
-        <span className="text-xs font-bold text-cyan-400">{prefix}{valueMin} - {prefix}{valueMax}</span>
+        <label className={`block text-xs font-medium transition-colors ${isClamped ? 'text-red-400' : 'text-gray-400'}`}>
+          {label} {isClamped && <span className="ml-1 text-[8px] uppercase tracking-widest">(Boundary Lock)</span>}
+        </label>
+        <span className={`text-xs font-bold transition-colors ${isClamped ? 'text-red-400' : 'text-cyan-400'}`}>
+          {prefix}{valueMin} - {prefix}{valueMax}
+        </span>
     </div>
     <div className="flex items-center space-x-2">
       <input
@@ -67,8 +73,8 @@ const RangeInput: React.FC<{
         max={max}
         step={step}
         value={valueMin}
-        onChange={(e) => onChange('min', Math.min(Number(e.target.value), valueMax))}
-        className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+        onChange={(e) => onChange('min', Number(e.target.value))}
+        className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer transition-all ${isClamped ? 'accent-red-500 bg-red-900/40' : 'accent-cyan-500 bg-gray-700'}`}
       />
       <input
         type="range"
@@ -76,8 +82,8 @@ const RangeInput: React.FC<{
         max={max}
         step={step}
         value={valueMax}
-        onChange={(e) => onChange('max', Math.max(Number(e.target.value), valueMin))}
-        className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+        onChange={(e) => onChange('max', Number(e.target.value))}
+        className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer transition-all ${isClamped ? 'accent-red-500 bg-red-900/40' : 'accent-cyan-500 bg-gray-700'}`}
       />
     </div>
   </div>
@@ -88,17 +94,20 @@ const MinMaxInput: React.FC<{
     valueMin: number;
     valueMax: number;
     onChange: (key: 'min' | 'max', value: number) => void;
-}> = ({ label, valueMin, valueMax, onChange }) => (
-    <div className="space-y-2">
-        <label className="block text-xs font-medium text-gray-400">{label}</label>
+    isClamped?: boolean;
+}> = ({ label, valueMin, valueMax, onChange, isClamped }) => (
+    <div className={`space-y-2 transition-colors duration-300 ${isClamped ? 'bg-red-500/10 p-2 -m-2 rounded-lg' : ''}`}>
+        <label className={`block text-xs font-medium transition-colors ${isClamped ? 'text-red-400' : 'text-gray-400'}`}>
+          {label}
+        </label>
         <div className="flex items-center justify-between space-x-2">
             <input
                 type="number"
                 min="1"
                 max="10"
                 value={valueMin}
-                onChange={(e) => onChange('min', Math.max(1, Math.min(Number(e.target.value), valueMax)))}
-                className="w-full bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-center text-xs text-white focus:border-cyan-500 outline-none"
+                onChange={(e) => onChange('min', Number(e.target.value))}
+                className={`w-full bg-gray-800 border rounded-md px-2 py-1 text-center text-xs text-white outline-none transition-colors ${isClamped ? 'border-red-500 text-red-200' : 'border-gray-700 focus:border-cyan-500'}`}
                 placeholder="Min"
             />
             <span className="text-gray-500">-</span>
@@ -107,11 +116,12 @@ const MinMaxInput: React.FC<{
                 min="1"
                 max="10"
                 value={valueMax}
-                 onChange={(e) => onChange('max', Math.min(10, Math.max(Number(e.target.value), valueMin)))}
-                className="w-full bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-center text-xs text-white focus:border-cyan-500 outline-none"
+                 onChange={(e) => onChange('max', Number(e.target.value))}
+                className={`w-full bg-gray-800 border rounded-md px-2 py-1 text-center text-xs text-white outline-none transition-colors ${isClamped ? 'border-red-500 text-red-200' : 'border-gray-700 focus:border-cyan-500'}`}
                 placeholder="Max"
             />
         </div>
+        {isClamped && <p className="text-[9px] text-red-500 font-bold uppercase text-center">Min cannot exceed Max</p>}
     </div>
 );
 
@@ -119,25 +129,35 @@ const MinMaxInput: React.FC<{
 export const FilterControls: React.FC<FilterControlsProps> = ({ filters, setFilters }) => {
   const [activePreset, setActivePreset] = useState<string>('all');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [clampedField, setClampedField] = useState<string | null>(null);
+
+  const triggerFeedback = (field: string) => {
+    setClampedField(field);
+    setTimeout(() => setClampedField(null), 800);
+  };
 
   const handlePresetSelect = (preset: FilterPreset) => {
     setActivePreset(preset.id);
     setFilters(preset.state);
   };
 
-  const handlePriceChange = (key: 'min' | 'max', value: number) => {
+  const validateAndSet = (category: keyof FilterState, key: 'min' | 'max', val: number) => {
     setActivePreset('custom');
-    setFilters(prev => ({ ...prev, price: { ...prev.price, [key]: value }}));
-  };
-  
-  const handleDemandChange = (key: 'min' | 'max', value: number) => {
-    setActivePreset('custom');
-    setFilters(prev => ({ ...prev, demand: { ...prev.demand, [key]: value }}));
-  };
+    const currentRange = filters[category];
+    
+    if (key === 'min' && val > currentRange.max) {
+      triggerFeedback(category);
+      setFilters(prev => ({ ...prev, [category]: { ...prev[category], min: prev[category].max } }));
+      return;
+    }
+    
+    if (key === 'max' && val < currentRange.min) {
+      triggerFeedback(category);
+      setFilters(prev => ({ ...prev, [category]: { ...prev[category], max: prev[category].min } }));
+      return;
+    }
 
-  const handleCompetitionChange = (key: 'min' | 'max', value: number) => {
-    setActivePreset('custom');
-    setFilters(prev => ({ ...prev, competition: { ...prev.competition, [key]: value }}));
+    setFilters(prev => ({ ...prev, [category]: { ...prev[category], [key]: val } }));
   };
 
   return (
@@ -183,8 +203,9 @@ export const FilterControls: React.FC<FilterControlsProps> = ({ filters, setFilt
                 step={50}
                 valueMin={filters.price.min}
                 valueMax={filters.price.max}
-                onChange={handlePriceChange}
+                onChange={(k, v) => validateAndSet('price', k, v)}
                 prefix="$"
+                isClamped={clampedField === 'price'}
             />
 
             <div className="grid grid-cols-2 gap-4">
@@ -192,14 +213,16 @@ export const FilterControls: React.FC<FilterControlsProps> = ({ filters, setFilt
                     label="Demand (1-10)"
                     valueMin={filters.demand.min}
                     valueMax={filters.demand.max}
-                    onChange={handleDemandChange}
+                    onChange={(k, v) => validateAndSet('demand', k, v)}
+                    isClamped={clampedField === 'demand'}
                 />
                 
                 <MinMaxInput
                     label="Comp. (1-10)"
                     valueMin={filters.competition.min}
                     valueMax={filters.competition.max}
-                    onChange={handleCompetitionChange}
+                    onChange={(k, v) => validateAndSet('competition', k, v)}
+                    isClamped={clampedField === 'competition'}
                 />
             </div>
           </div>

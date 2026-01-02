@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import type { ScoredNiche } from '../types';
 
 interface GigTaskModalProps {
@@ -7,7 +8,7 @@ interface GigTaskModalProps {
   isOpen: boolean;
 }
 
-const CopyButton: React.FC<{ textToCopy: string }> = ({ textToCopy }) => {
+const CopyButton: React.FC<{ textToCopy: string; label?: string }> = ({ textToCopy, label = "Copy" }) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
@@ -19,9 +20,9 @@ const CopyButton: React.FC<{ textToCopy: string }> = ({ textToCopy }) => {
     return (
         <button
             onClick={handleCopy}
-            className={`absolute top-2 right-2 text-xs px-2 py-1 rounded transition-colors z-10 ${copied ? 'bg-emerald-500 text-white' : 'bg-gray-600 hover:bg-gray-500 text-gray-200'}`}
+            className={`absolute top-2 right-2 text-[10px] font-black uppercase tracking-tighter px-2 py-1 rounded transition-all z-10 ${copied ? 'bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-gray-700/80 hover:bg-emerald-600 text-gray-300'}`}
         >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? 'Captured' : label}
         </button>
     );
 };
@@ -30,16 +31,25 @@ const CopyButton: React.FC<{ textToCopy: string }> = ({ textToCopy }) => {
 export const GigTaskModal: React.FC<GigTaskModalProps> = ({ niche, onClose, isOpen }) => {
   if (!isOpen || !niche) return null;
 
-  // Use pre-fetched enriched data
-  const gigTitles = niche.gigTitles || [
-    `I will be your expert in ${niche.niche}`,
-    `I will provide professional ${niche.niche} services`,
-    `I will help you with high-quality ${niche.niche}`,
-  ];
+  // Synthesize 3 additional high-conversion titles based on the USP (Battle Plan) and Audience
+  const synthesizedTitles = useMemo(() => {
+    const { niche: nicheName, targetAudience, battlePlan, competitorWeakness } = niche;
+    
+    // Cleaning strings for cleaner titles
+    const cleanPlan = battlePlan.replace(/\.$/, '');
+    const cleanAudience = targetAudience.replace(/\.$/, '');
+    const cleanWeakness = (competitorWeakness || 'generic quality').split('.')[0].toLowerCase();
 
-  const gigDescription = niche.gigDescription || `Are you looking for top-tier ${niche.niche}? Look no further!\n\n${niche.description}`;
+    return [
+      `Surgical ${nicheName} for ${cleanAudience} | ${cleanPlan} Framework`,
+      `Scale your ${cleanAudience} ROI with the ${cleanPlan} Strategy`,
+      `Stop ${cleanWeakness} | High-Performance ${nicheName} via ${cleanPlan}`
+    ];
+  }, [niche]);
 
-  const tags = (niche.keywords || niche.niche.toLowerCase().split(' ')).join(', ');
+  const allTitles = [...(niche.gigTitles || []), ...synthesizedTitles];
+  const gigDescription = niche.gigDescription || "";
+  const tags = (niche.keywords || []).join(', ');
 
   const pricing = {
       basic: Math.round(niche.averagePrice * 0.5),
@@ -47,127 +57,117 @@ export const GigTaskModal: React.FC<GigTaskModalProps> = ({ niche, onClose, isOp
       premium: Math.round(niche.averagePrice * 1.8),
   };
 
-  const battlePlan = niche.battlePlan || "Focus on delivering faster than the competition and providing a high-quality initial consultation to build trust.";
+  // 2025 High-Conversion PAS Framework Constructor
+  const structuredDescription = `
+[THE PROBLEM]
+Most providers in the ${niche.niche} space offer generic, outdated solutions that ignore the specific needs of ${niche.targetAudience}. Core frustration: ${niche.painPoints[0]}.
+
+[THE AGITATION]
+In 2025, a "one-size-fits-all" approach results in lost ROI. Ignoring ${niche.painPoints[1] || 'market trends'} leads to stagnation.
+
+[THE SOLUTION: MY UNIQUE USP]
+I specialize in ${niche.niche} with a tactical focus on: ${niche.battlePlan}. 
+
+[WHAT YOU GET]
+${gigDescription}
+
+[WHY ME?]
+I don't just perform tasks; I deliver transformations. My workflow is optimized for ${niche.targetAudience}, ensuring you skip the typical market bottlenecks.
+  `.trim();
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 transition-opacity p-4"
+      className="fixed inset-0 bg-gray-950/90 backdrop-blur-md flex justify-center items-center z-50 transition-opacity p-4"
       onClick={onClose}
     >
       <div 
-        className="bg-gray-800 rounded-lg shadow-2xl border border-gray-700 w-full max-w-3xl transform transition-all max-h-[90vh] overflow-y-auto"
+        className="bg-gray-900 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-700/50 w-full max-w-4xl transform transition-all max-h-[92vh] flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center border-b border-gray-600 p-6 sticky top-0 bg-gray-800 z-20">
+        <div className="flex justify-between items-center border-b border-gray-800 p-6 bg-gray-900/80 backdrop-blur-md z-30">
           <div className="flex flex-col">
-            <h2 className="text-xl font-bold text-emerald-400">Gig Execution Blueprint</h2>
-            <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest font-black">{niche.niche}</p>
+            <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <h2 className="text-xl font-black text-white tracking-tighter uppercase italic">Strategic Blueprint 25/26</h2>
+            </div>
+            <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-[0.2em] font-black">{niche.niche}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors text-3xl leading-none">&times;</button>
         </div>
         
-        <div className="p-6 space-y-8 text-gray-300">
-            {/* Battle Plan Banner */}
-            <div className="bg-emerald-900/20 border border-emerald-500/30 p-4 rounded-xl">
-                <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest mb-2">Strategy: How to Win</h3>
-                <p className="text-sm leading-relaxed text-emerald-100 italic">"{battlePlan}"</p>
+        <div className="p-8 space-y-10 overflow-y-auto custom-scrollbar">
+            {/* 2025 Market Sentiment Analysis */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-emerald-500/5 border border-emerald-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-3 opacity-10">
+                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                    </div>
+                    <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-3">Winning Edge (The USP)</h3>
+                    <p className="text-sm leading-relaxed text-emerald-50/90 font-medium italic">"{niche.battlePlan}"</p>
+                </div>
+                <div className="bg-cyan-500/5 border border-cyan-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                     <div className="absolute top-0 right-0 p-3 opacity-10">
+                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    </div>
+                    <h3 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-3">Target & Channels</h3>
+                    <div className="space-y-2">
+                      <p className="text-sm leading-relaxed text-cyan-50/90 font-medium">{niche.targetAudience}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {niche.marketingChannels.map(c => (
+                          <span key={c} className="text-[8px] px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-black uppercase tracking-tighter">#{c}</span>
+                        ))}
+                      </div>
+                    </div>
+                </div>
             </div>
 
-            {/* Gig Title */}
-            <div>
-                <h3 className="font-bold text-white mb-3 flex items-center">
-                    <span className="w-6 h-6 rounded-full bg-emerald-500 text-gray-900 text-xs flex items-center justify-center font-black mr-2">1</span>
-                    Suggested Gig Titles
-                </h3>
-                <div className="space-y-2">
-                    {gigTitles.map((title, index) => (
-                         <div key={index} className="relative bg-gray-900/70 p-4 pr-16 rounded-xl border border-gray-700 group hover:border-emerald-500/50 transition-colors">
-                            <p className="text-sm font-medium">{title}</p>
+            {/* 1. Psychological Hooks (Titles) */}
+            <section>
+                <div className="flex items-center space-x-3 mb-5">
+                    <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-black text-sm">01</span>
+                    <h3 className="font-black text-white text-lg uppercase tracking-tight">Conversion-First Titles</h3>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                    {allTitles.map((title, index) => (
+                         <div key={index} className={`relative p-5 pr-20 rounded-2xl border transition-all group shadow-inner ${index >= (niche.gigTitles?.length || 0) ? 'bg-cyan-900/10 border-cyan-500/30 hover:border-cyan-400' : 'bg-gray-800/40 border-gray-700/50 hover:border-emerald-500/40'}`}>
+                            <p className="text-sm font-bold text-gray-100 leading-tight">{title}</p>
+                            <span className={`text-[8px] absolute bottom-2 left-5 uppercase font-black ${index >= (niche.gigTitles?.length || 0) ? 'text-cyan-500/70' : 'text-emerald-500/50'}`}>
+                              {index >= (niche.gigTitles?.length || 0) ? 'USP SYnthesis active' : 'Authority Hook Active'}
+                            </span>
                             <CopyButton textToCopy={title} />
                         </div>
                     ))}
-                </div>
-            </div>
-
-             {/* Gig Description */}
-            <div>
-                <h3 className="font-bold text-white mb-3 flex items-center">
-                    <span className="w-6 h-6 rounded-full bg-emerald-500 text-gray-900 text-xs flex items-center justify-center font-black mr-2">2</span>
-                    High-Converting Description
-                </h3>
-                <div className="relative bg-gray-900/70 p-5 pr-16 rounded-xl border border-gray-700">
-                    <div className="text-sm font-sans whitespace-pre-wrap leading-relaxed">{gigDescription}</div>
-                    <CopyButton textToCopy={gigDescription} />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Pricing */}
-                <div>
-                    <h3 className="font-bold text-white mb-3 flex items-center text-sm">
-                        <span className="w-5 h-5 rounded-full bg-emerald-500 text-gray-900 text-[10px] flex items-center justify-center font-black mr-2">3</span>
-                        Pricing Strategy
-                    </h3>
-                    <div className="bg-gray-900/70 p-5 rounded-xl border border-gray-700 space-y-3">
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs text-gray-500 uppercase">Basic</span>
-                            <span className="text-emerald-400 font-bold">${pricing.basic}</span>
-                        </div>
-                        <div className="flex justify-between items-center bg-emerald-400/5 -mx-5 px-5 py-2">
-                            <span className="text-xs text-gray-100 font-bold uppercase">Standard (Best)</span>
-                            <span className="text-emerald-400 font-black">${pricing.standard}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs text-gray-500 uppercase">Premium</span>
-                            <span className="text-emerald-400 font-bold">${pricing.premium}</span>
-                        </div>
+                    <div className="mt-2 text-[9px] text-gray-500 italic flex items-center">
+                        <svg className="w-3 h-3 mr-1 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Last 3 titles synthesized using ROI-focused USP formulas from your Battle Plan.
                     </div>
                 </div>
+            </section>
 
-                {/* Tags */}
-                <div>
-                    <h3 className="font-bold text-white mb-3 flex items-center text-sm">
-                        <span className="w-5 h-5 rounded-full bg-emerald-500 text-gray-900 text-[10px] flex items-center justify-center font-black mr-2">4</span>
-                        Search Tags
-                    </h3>
-                    <div className="relative bg-gray-900/70 p-5 pr-16 rounded-xl border border-gray-700 min-h-[100px]">
-                        <div className="flex flex-wrap gap-2">
-                            {(niche.keywords || []).map(tag => (
-                                <span key={tag} className="px-2 py-1 bg-gray-800 rounded border border-gray-600 text-[10px] font-mono">{tag}</span>
-                            ))}
-                        </div>
-                        <CopyButton textToCopy={tags} />
+             {/* 2. Transformation Story (Description) */}
+            <section>
+                <div className="flex items-center space-x-3 mb-5">
+                    <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-black text-sm">02</span>
+                    <h3 className="font-black text-white text-lg uppercase tracking-tight">High-Persuasion Gig Description</h3>
+                </div>
+                <div className="relative bg-gray-800/40 p-6 pr-20 rounded-2xl border border-gray-700/50 shadow-inner group">
+                    <div className="absolute top-4 left-4 flex space-x-2">
+                        <span className="text-[7px] px-1.5 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-black uppercase tracking-widest">PAS Framework</span>
+                        <span className="text-[7px] px-1.5 py-0.5 rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 font-black uppercase tracking-widest">USP Integrated</span>
+                    </div>
+                    <div className="text-sm font-sans whitespace-pre-wrap leading-relaxed text-gray-300 italic pt-6">
+                        {structuredDescription}
+                    </div>
+                    <CopyButton textToCopy={structuredDescription} label="Copy Optimized Copy" />
+                    <div className="mt-4 p-3 bg-gray-900/50 rounded-xl border border-gray-700 text-[10px] text-gray-500">
+                        <span className="font-black text-emerald-500 uppercase mr-1">Pro Tip:</span> 
+                        Addresses key pain points: <span className="text-red-400 font-bold">{niche.painPoints.join(', ')}</span>. Use this copy to establish immediate authority.
                     </div>
                 </div>
-            </div>
-            
-             {/* FAQ */}
-            <div>
-                <h3 className="font-bold text-white mb-3 flex items-center">
-                    <span className="w-6 h-6 rounded-full bg-emerald-500 text-gray-900 text-xs flex items-center justify-center font-black mr-2">5</span>
-                    Killer FAQs
-                </h3>
-                <div className="space-y-3">
-                    {niche.faqs?.map((f, i) => (
-                        <div key={i} className="relative bg-gray-900/70 p-4 pr-16 rounded-xl border border-gray-700">
-                             <p className="text-xs font-bold text-emerald-400 mb-1">Q: {f.question}</p>
-                             <p className="text-xs text-gray-300">A: {f.answer}</p>
-                             <CopyButton textToCopy={`Q: ${f.question}\nA: ${f.answer}`} />
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
+            </section>
 
-        <div className="p-6 border-t border-gray-600 bg-gray-900/30">
-          <button
-            onClick={onClose}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition-all shadow-lg hover:shadow-emerald-500/20 active:scale-[0.98]"
-          >
-            Acknowledge Blueprint
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+            {/* 3. Pricing & Tags Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <section>
+                    <div className="flex items-center space-x-3 mb-5">
+                        <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-40
