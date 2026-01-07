@@ -20,7 +20,7 @@ export const Loader: React.FC<LoaderProps> = ({ progress, message = "Analyzing N
       </div>
       
       <div className="text-center space-y-2">
-        <p className="text-xl font-bold text-white tracking-tight">Market Intelligence Scan</p>
+        <p className="text-xl font-bold text-white tracking-tight">Active Intelligence Scan</p>
         <p className="text-sm text-cyan-400/80 font-medium h-5 animate-pulse">{message}</p>
       </div>
 
@@ -32,14 +32,14 @@ export const Loader: React.FC<LoaderProps> = ({ progress, message = "Analyzing N
             ></div>
           </div>
           <div className="flex justify-between items-center px-1">
-              <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Progress</span>
+              <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Synthesis Progress</span>
               <span className="text-xs font-black text-cyan-400 tabular-nums">{Math.round(progress)}%</span>
           </div>
       </div>
       
       <div className="bg-gray-900/40 p-3 rounded-lg border border-gray-700/50 w-full">
           <p className="text-[10px] text-gray-500 italic text-center leading-tight">
-              Using Gemini 3 Flash with Google Search Grounding. This deep synthesis can take up to 2 minutes during peak load.
+              Executing deep market audits via live search nodes. Expected completion in 30-90 seconds.
           </p>
       </div>
     </div>

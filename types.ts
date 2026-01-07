@@ -6,6 +6,8 @@ export interface Niche {
   demand: number;
   competition: number;
   trend: number;
+  scalabilityIndex: number; // 1-10: How easy to scale via AI/automation
+  aiDisruptionRisk: number; // 1-10: Risk of being fully replaced by AI
   gigTitles: string[];
   gigDescription: string;
   keywords: string[];
@@ -16,6 +18,7 @@ export interface Niche {
   targetAudience: string;
   marketingChannels: string[];
   painPoints: string[];
+  strategicForecast: string; // Renamed from strategicForecast2027
 }
 
 export interface ScoreBreakdown {
@@ -23,6 +26,7 @@ export interface ScoreBreakdown {
   competition: number;
   price: number;
   trend: number;
+  scalability: number;
 }
 
 export interface ScoredNiche extends Niche {
@@ -30,13 +34,14 @@ export interface ScoredNiche extends Niche {
   breakdown: ScoreBreakdown;
 }
 
-export type NicheGoal = 'balanced' | 'quick-start' | 'high-ticket' | 'trend-hunter' | 'custom';
+export type NicheGoal = 'balanced' | 'quick-start' | 'high-ticket' | 'trend-hunter' | 'ai-hybrid' | 'custom';
 
 export interface ScoringWeights {
   demand: number;
   competition: number;
   averagePrice: number;
   trend: number;
+  scalability: number;
 }
 
 export interface FilterState {

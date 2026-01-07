@@ -29,27 +29,20 @@ const App: React.FC = () => {
   
   const [weights, setWeights] = useState<ScoringWeights>(() => {
     try {
-      const savedWeights = localStorage.getItem('fiverrNicheWeights');
-      if (savedWeights) {
-        return JSON.parse(savedWeights);
-      }
-    } catch (error) {
-      console.error("Failed to parse weights from localStorage", error);
-    }
+      const savedWeights = localStorage.getItem('fiverrNicheWeights_v4');
+      if (savedWeights) return JSON.parse(savedWeights);
+    } catch (e) {}
     return {
-      demand: 5,
-      competition: -5,
+      demand: 6,
+      competition: -4,
       averagePrice: 4,
-      trend: 3,
+      trend: 5,
+      scalability: 8,
     };
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem('fiverrNicheWeights', JSON.stringify(weights));
-    } catch (error) {
-      console.error("Failed to save weights to localStorage", error);
-    }
+    localStorage.setItem('fiverrNicheWeights_v4', JSON.stringify(weights));
   }, [weights]);
 
   const cleanupInterval = useCallback(() => {
@@ -63,202 +56,175 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setProgress(0);
-    setLoadingMessage('Activating Search Grounding...');
+    setLoadingMessage('Activating Strategic Intelligence Node...');
     
     cleanupInterval();
-
-    // Adjusted progress speed to feel consistent over a 30-60 second window
     intervalRef.current = window.setInterval(() => {
         setProgress(prev => {
-            if (prev < 20) {
-                setLoadingMessage('Tapping into global search nodes...');
-                return prev + 0.5;
+            if (prev < 30) {
+                setLoadingMessage('Scanning current marketplace dynamics...');
+                return prev + 0.4;
             }
-            if (prev < 60) {
-                setLoadingMessage('Identifying 2025 market gaps...');
-                return prev + 0.3;
+            if (prev < 70) {
+                setLoadingMessage('Auditing live 2026 competitor data...');
+                return prev + 0.2;
             }
             if (prev < 95) {
-                setLoadingMessage('Generating tactical blueprints...');
-                return prev + 0.15;
+                setLoadingMessage('Synthesizing high-conversion blueprints...');
+                return prev + 0.1;
             }
             return prev;
         });
-    }, 200);
+    }, 150);
 
     try {
       const nicheData = await fetchNicheData();
       cleanupInterval();
       setProgress(100);
-      setLoadingMessage('Analysis complete!');
+      setLoadingMessage('Synthesis complete.');
       setNiches(nicheData);
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 600));
       setIsLoading(false);
     } catch (err: any) {
       cleanupInterval();
-      console.error(err);
-      setError(err.message || 'Analysis failed. Market nodes are unresponsive.');
+      setError(err.message || 'Strategic node failed to respond.');
       setIsLoading(false);
       setProgress(0);
     }
   }, [cleanupInterval]);
-  
-  useEffect(() => {
-    return cleanupInterval;
-  }, [cleanupInterval]);
 
   const scoredNiches = useMemo<ScoredNiche[]>(() => {
-    if (!niches || niches.length === 0) return [];
+    if (!niches.length) return [];
     
-    const filtered = niches.filter(niche => {
-        const price = niche.averagePrice ?? 0;
-        const demand = niche.demand ?? 5;
-        const competition = niche.competition ?? 5;
+    const filtered = niches.filter(n => 
+      n.averagePrice >= filters.price.min && n.averagePrice <= filters.price.max &&
+      n.demand >= filters.demand.min && n.demand <= filters.demand.max &&
+      n.competition >= filters.competition.min && n.competition <= filters.competition.max
+    );
 
-        return price >= filters.price.min &&
-               price <= filters.price.max &&
-               demand >= filters.demand.min &&
-               demand <= filters.demand.max &&
-               competition >= filters.competition.min &&
-               competition <= filters.competition.max;
-    });
+    const maxPrice = Math.max(...filtered.map(n => n.averagePrice), 1);
 
-    if (filtered.length === 0) return [];
-
-    const maxPrice = Math.max(...filtered.map(n => n.averagePrice ?? 1), 1);
-
-    const calculatedNiches = filtered.map(niche => {
-      const demand = typeof niche.demand === 'number' ? niche.demand : 5;
-      const competition = typeof niche.competition === 'number' ? niche.competition : 5;
-      const price = typeof niche.averagePrice === 'number' ? niche.averagePrice : 0;
-      const trend = typeof niche.trend === 'number' ? niche.trend : 0;
+    const calculated = filtered.map(niche => {
+      const d = niche.demand * weights.demand;
+      const c = niche.competition * weights.competition;
+      const p = (niche.averagePrice / maxPrice) * 10 * weights.averagePrice;
+      const t = niche.trend * 10 * weights.trend;
+      const s = niche.scalabilityIndex * weights.scalability;
       
-      const demandScore = demand * weights.demand;
-      const competitionScore = competition * weights.competition;
-      const priceScore = (price / maxPrice) * 10 * weights.averagePrice;
-      const trendScore = trend * weights.trend;
-      
-      const rawScore = demandScore + competitionScore + priceScore + trendScore;
+      const raw = d + c + p + t + s;
       
       const breakdown: ScoreBreakdown = {
-        demand: Math.max(0, demandScore),
-        competition: Math.max(0, Math.abs(competitionScore)),
-        price: Math.max(0, priceScore),
-        trend: Math.max(0, trendScore)
+        demand: Math.max(0, d),
+        competition: Math.max(0, Math.abs(c)),
+        price: Math.max(0, p),
+        trend: Math.max(0, t),
+        scalability: Math.max(0, s)
       };
 
-      return { ...niche, score: rawScore, breakdown };
+      return { ...niche, score: raw, breakdown };
     });
 
-    const minScore = Math.min(...calculatedNiches.map(n => n.score));
-    const maxScore = Math.max(...calculatedNiches.map(n => n.score));
+    const scores = calculated.map(n => n.score);
+    const minS = Math.min(...scores);
+    const maxS = Math.max(...scores);
     
-    return calculatedNiches.map(niche => ({
+    return calculated.map(niche => ({
       ...niche,
-      score: maxScore > minScore ? Math.round(((niche.score - minScore) / (maxScore - minScore)) * 100) : 50
+      score: maxS > minS ? Math.round(((niche.score - minS) / (maxS - minS)) * 100) : 50
     })).sort((a, b) => b.score - a.score);
-
   }, [niches, weights, filters]);
 
-  const handleNicheSelect = useCallback((nicheName: string) => {
-    setExpandedNiche(nicheName);
-    
-    setTimeout(() => {
-      const element = document.getElementById(`niche-card-${nicheName}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        element.classList.add('ring-4', 'ring-cyan-500/50');
-        setTimeout(() => {
-            element.classList.remove('ring-4', 'ring-cyan-500/50');
-        }, 2000);
-      }
-    }, 100);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 font-sans selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-[#020617] text-gray-100 selection:bg-cyan-500/30 overflow-x-hidden">
+      <div className="fixed inset-0 pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/20 blur-[120px] rounded-full animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[150px] rounded-full"></div>
+      </div>
+
       <Header />
-      <main className="container mx-auto p-4 md:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-4 xl:col-span-3 space-y-8">
-            <div className="bg-gray-800/50 rounded-lg p-6 shadow-2xl border border-gray-700">
-              <Controls weights={weights} setWeights={setWeights} onAnalyze={handleAnalyze} isLoading={isLoading} />
+      
+      <main className="container mx-auto px-6 py-10 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <aside className="lg:col-span-4 xl:col-span-3 space-y-8">
+            <div className="sticky top-28 space-y-8">
+              <div className="bg-gray-900/40 backdrop-blur-2xl rounded-3xl p-7 border border-white/5 shadow-2xl">
+                <Controls weights={weights} setWeights={setWeights} onAnalyze={handleAnalyze} isLoading={isLoading} />
+              </div>
+              <div className="bg-gray-900/40 backdrop-blur-2xl rounded-3xl p-7 border border-white/5 shadow-2xl">
+                <FilterControls filters={filters} setFilters={setFilters} />
+              </div>
             </div>
-             <div className="bg-gray-800/50 rounded-lg p-6 shadow-2xl border border-gray-700">
-              <FilterControls filters={filters} setFilters={setFilters} />
-            </div>
-          </div>
-          <div className="lg:col-span-8 xl:col-span-9">
+          </aside>
+
+          <section className="lg:col-span-8 xl:col-span-9 space-y-12">
             {isLoading && !niches.length ? (
-              <div className="flex justify-center items-center h-[600px] bg-gray-800/50 rounded-lg p-6 shadow-2xl border border-gray-700">
+              <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gray-900/20 backdrop-blur-xl rounded-[3rem] border border-white/5 shadow-inner">
                 <Loader progress={progress} message={loadingMessage} />
               </div>
             ) : error ? (
-              <div className="flex flex-col justify-center items-center h-[600px] bg-red-900/10 border border-red-500/30 rounded-2xl p-8 text-center">
-                  <div className="bg-red-500/10 p-6 rounded-full mb-6 border border-red-500/20">
-                    <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  </div>
-                  <h3 className="text-2xl font-bold mb-3 text-red-200 uppercase tracking-tight">Intelligence Timeout</h3>
-                  <p className="mb-8 max-w-md text-gray-400 leading-relaxed text-sm">
-                    {error}
-                  </p>
-                  <button
-                    onClick={handleAnalyze}
-                    className="bg-red-600 hover:bg-red-500 text-white font-black py-4 px-10 rounded-xl transition-all active:scale-95 shadow-xl shadow-red-900/20 border border-red-400/20 uppercase text-xs tracking-widest"
-                  >
-                    Retry Analysis
-                  </button>
-                  <p className="mt-6 text-[10px] text-gray-600 italic">Market grounding success depends on real-time search node availability.</p>
+              <div className="flex flex-col items-center justify-center min-h-[50vh] bg-red-500/5 border border-red-500/10 rounded-[3rem] p-12 text-center">
+                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
+                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <h3 className="text-2xl font-black text-red-200 uppercase mb-4 tracking-tight">Strategic Node Offline</h3>
+                <p className="text-gray-400 mb-8 max-w-md mx-auto">{error}</p>
+                <button onClick={handleAnalyze} className="px-10 py-4 bg-red-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-500 transition-all shadow-lg shadow-red-900/20">Restart Strategic Analysis</button>
               </div>
             ) : niches.length > 0 ? (
-              <div className="space-y-8">
-                {scoredNiches.length > 0 ? (
-                    <>
-                        <RisingNichesBanner data={scoredNiches} onNicheClick={handleNicheSelect} />
-                        <div className="bg-gray-800/50 rounded-lg p-6 shadow-2xl border border-gray-700">
-                          <h2 className="text-2xl font-bold mb-6 text-cyan-400">Top Rankings</h2>
-                          <div className="max-h-[640px] h-[640px]">
-                            <NicheChart data={scoredNiches.slice(0, 10)} onNicheClick={handleNicheSelect} />
-                          </div>
-                        </div>
-                        <div className="bg-gray-800/50 rounded-lg p-6 shadow-2xl border border-gray-700">
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                            <h2 className="text-2xl font-bold text-cyan-400">
-                                Detailed Analysis ({scoredNiches.length})
-                            </h2>
-                            <ExportButtons data={scoredNiches} />
-                          </div>
-                          <ResultsTable 
-                            data={scoredNiches} 
-                            expandedNiche={expandedNiche} 
-                            setExpandedNiche={setExpandedNiche} 
-                          />
-                        </div>
-                    </>
-                ) : (
-                    <div className="flex flex-col justify-center items-center h-96 bg-gray-800/50 rounded-lg p-6 shadow-2xl border border-gray-700 text-gray-400 space-y-4">
-                        <svg className="w-16 h-16 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                        <p className="text-center max-w-xs text-sm">No niches match your current filter criteria. Try expanding your ranges or resetting filters.</p>
-                        <button onClick={() => setFilters({ price: { min: 0, max: 2000 }, demand: { min: 1, max: 10 }, competition: { min: 1, max: 10 }})} className="text-cyan-400 hover:text-cyan-300 underline text-xs font-black uppercase tracking-widest">Reset Filters</button>
+              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+                <RisingNichesBanner data={scoredNiches} onNicheClick={setExpandedNiche} />
+                
+                <div className="grid grid-cols-1 xl:grid-cols-1 gap-10">
+                   <div className="bg-gray-900/30 backdrop-blur-xl rounded-[3rem] border border-white/5 p-8 shadow-2xl overflow-hidden relative group">
+                      <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                         <svg className="w-32 h-32 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                      </div>
+                      <h2 className="text-2xl font-black text-white mb-8 tracking-tighter flex items-center">
+                        <span className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mr-3 text-cyan-400">📊</span>
+                        Current Opportunity Leads
+                      </h2>
+                      <div className="h-[500px]">
+                        <NicheChart data={scoredNiches.slice(0, 10)} onNicheClick={setExpandedNiche} />
+                      </div>
+                   </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-2">
+                    <div>
+                      <h2 className="text-3xl font-black text-white tracking-tighter">Strategic Intelligence Hub</h2>
+                      <p className="text-gray-500 text-sm mt-1 uppercase tracking-widest font-bold">2026 Active Market Surveillance</p>
                     </div>
-                )}
+                    <ExportButtons data={scoredNiches} />
+                  </div>
+                  <ResultsTable data={scoredNiches} expandedNiche={expandedNiche} setExpandedNiche={setExpandedNiche} />
+                </div>
               </div>
             ) : (
-                 <div className="flex flex-col justify-center items-center h-[500px] bg-gray-800/50 rounded-2xl p-12 shadow-2xl border border-gray-700 text-gray-400 space-y-6 text-center">
-                    <div className="bg-cyan-500/10 p-6 rounded-full border border-cyan-500/20">
-                      <svg className="w-16 h-16 text-cyan-400 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-white mb-2">Market Scanner Ready</h3>
-                      <p className="max-w-md mx-auto text-sm leading-relaxed">Adjust your scoring weights and filters in the sidebar, then trigger the AI intelligence scan to discover under-served Fiverr niches for 2025.</p>
-                    </div>
-                    <button onClick={handleAnalyze} className="bg-cyan-600 text-white px-10 py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-cyan-500 transition-all shadow-xl shadow-cyan-900/40 active:scale-95 border border-cyan-400/30">Start Market Analysis</button>
-                    <p className="text-[10px] uppercase font-black tracking-widest text-gray-600">Powered by Gemini 3 Flash & Google Search</p>
+              <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-10">
+                <div className="relative">
+                  <div className="w-40 h-40 rounded-full bg-gradient-to-tr from-cyan-600/20 to-blue-600/20 blur-3xl animate-pulse absolute inset-0"></div>
+                  <div className="relative z-10 w-24 h-24 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center backdrop-blur-xl shadow-2xl">
+                    <svg className="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  </div>
                 </div>
+                <div className="space-y-4 max-w-lg">
+                  <h2 className="text-4xl font-black text-white tracking-tighter">Market Connectivity Pending</h2>
+                  <p className="text-gray-400 leading-relaxed font-medium">Initiate the 2026 market scan to synthesize current freelancer trends and competitive gaps. Adjust filters to refine your entry strategy.</p>
+                </div>
+                <button onClick={handleAnalyze} className="group relative px-12 py-5 bg-cyan-600 rounded-[2rem] font-black uppercase text-sm tracking-[0.2em] text-white hover:bg-cyan-500 transition-all shadow-2xl shadow-cyan-500/40 active:scale-95 overflow-hidden">
+                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                   Begin Strategic Audit
+                </button>
+              </div>
             )}
-          </div>
+          </section>
         </div>
       </main>
+
+      <footer className="container mx-auto px-6 py-12 border-t border-white/5 mt-20 text-center">
+         <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">&copy; 2026 Strategic Intelligence Ecosystem</p>
+      </footer>
     </div>
   );
 };
